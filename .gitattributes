@@ -1,0 +1,8 @@
+# Generated distribution artifacts (ignored in GitHub language stats)
+dist/** linguist-generated=true
+
+# Web demo, documentation, and browser test benches
+web/** linguist-documentation=true
+
+# Test fixtures
+fixtures/** linguist-vendored=true

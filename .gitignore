@@ -1,0 +1,27 @@
+# Build and dependencies
+/target/
+/node_modules/
+/.cache/
+/data/generated/
+/artifacts/
+deno.lock
+
+# Web build outputs and compressed assets
+/web/pkg/
+/web/dist/
+/web/model.json
+/web/model.bin
+/web/model.q4.json
+/web/model.q4.bin
+/web/**/*.br
+/web/compact/pkg/
+/web/compact/dist/
+/web/bench/generated/
+/web/experiments/generated/
+
+# Logs and system
+*.log
+.DS_Store
+Thumbs.db
+
+/public/

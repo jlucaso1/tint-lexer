@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "min_agreement": 0.9,
+  "min_shared_languages": 90,
+  "min_test_tokens_per_language": 100,
+  "require_macro_f1_nonregression": true,
+  "max_bundle_brotli_ratio": 1,
+  "max_median_ratio": 1,
+  "max_p95_ratio": 1,
+  "required_performance_cases": [
+    "rust-1024",
+    "rust-65536",
+    "rust-262144",
+    "three-0.97.0-10x"
+  ]
+}

@@ -1,0 +1,11 @@
+:root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
+body { margin: 0; }
+main { max-width: 1100px; margin: 3rem auto; padding: 0 1.25rem; }
+h1, h2 { line-height: 1.2; }
+.controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+button { font: inherit; padding: .45rem .8rem; cursor: pointer; }
+.table { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: .6rem; border-bottom: 1px solid #8886; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+@media (max-width: 600px) { main { margin: 1.5rem auto; } th, td { padding: .4rem; } }

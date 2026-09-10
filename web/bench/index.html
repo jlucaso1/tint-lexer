@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tint benchmark</title><link rel="stylesheet" href="./style.css"></head>
+<body><main>
+  <h1>Lexer benchmark</h1>
+  <p>Published gpu-lexer 0.0.1 and the compact runtime. Separate workers, identical sources, two warmups and five measured runs.</p>
+  <p>These synthetic workloads and tiny teacher fixtures do not establish general accuracy or a performance win. Keep the tab visible and other GPU workloads idle.</p>
+  <div class="controls"><label><input id="large" type="checkbox"> Include three.min.js, ten copies</label><label><input id="burn" type="checkbox"> Include optional Burn reference</label><button id="run">Run benchmark</button><button id="download" disabled>Download JSON</button></div>
+  <p id="status" role="status">Ready. Build fixtures with node tools/prepare-bench.mjs first.</p>
+  <h2>Highlight time</h2><div class="table"><table><thead><tr><th>Source</th><th>Engine</th><th>Status</th><th>Median ms</th><th>p95 ms</th></tr></thead><tbody id="timings"></tbody></table></div>
+  <h2>Teacher agreement</h2><div class="table"><table><thead><tr><th>Engine</th><th>Language</th><th>Tokens</th><th>Agreement</th><th>Macro F1</th></tr></thead><tbody id="quality"></tbody></table></div>
+  <p>Scoring uses common Rust tokenizer units and the custom nine-class teacher theme, not the article theme. Download JSON for cold-start times, exclusions, confusion matrices, class support, artifact hashes and hardware details.</p>
+  <pre id="details"></pre>
+</main><script type="module" src="./main.js"></script></body></html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f1eb">
+  <title>Tint | Local syntax lab</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./main.js"></script>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <a class="wordmark" href="./" aria-label="Tint home">Tint<span aria-hidden="true">.</span></a>
+      <span class="edition">LOCAL SYNTAX LAB / 01</span>
+    </header>
+    <section class="intro" aria-labelledby="heading">
+      <div><p class="eyebrow">EXPERIMENTAL / WEBGPU + WASM</p><h1 id="heading">Syntax highlighting,<br>learned from code.</h1></div>
+      <p class="description">Syntax labels predicted from a local token window, not a language grammar. Inference runs in a worker on your GPU or via WASM CPU fallback. Your source stays in this browser.</p>
+    </section>
+    <div class="toolbar">
+      <div class="sample-picker"><label for="sample">Load sample</label><select id="sample"><option value="auto">Auto</option><option value="rust">Rust</option><option value="typescript">TypeScript</option><option value="python">Python</option></select></div>
+      <span class="sample-note">Samples only. No language hints reach the model. Auto is free text in any language.</span>
+    </div>
+    <section class="workspace" aria-label="Syntax highlighting experiment">
+      <div class="pane source-pane">
+        <div class="pane-heading"><label for="source">01 / SOURCE</label><span id="size">0 B</span></div>
+        <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="editor-help" maxlength="262144" placeholder="Paste any code here, in any language — highlighting runs automatically."></textarea>
+      </div>
+      <div class="pane result-pane">
+        <div class="pane-heading"><span>02 / MODEL OUTPUT</span><span id="output-state">PLAIN TEXT</span></div>
+        <pre id="output" tabindex="0" aria-label="Model-highlighted source"><code id="code"></code></pre>
+      </div>
+    </section>
+    <div class="status-row"><p id="status" role="status" aria-live="polite" aria-atomic="true">Preparing worker...</p><span class="local">LOCAL INFERENCE</span></div>
+    <p id="error" role="alert" aria-live="assertive" hidden></p>
+    <section class="bench-section" id="live-benchmark" aria-label="Live Syntax Highlighting Benchmark">
+      <div class="bench-header">
+        <div>
+          <p class="eyebrow">03 / IN-BROWSER BENCHMARK</p>
+          <h2 class="bench-title">Highlight 10× three.min.js</h2>
+          <p class="bench-sub">5.56M characters • live warmed browser time • lower is better</p>
+        </div>
+        <div class="bench-actions">
+          <select id="bench-workload" class="bench-select" aria-label="Workload size">
+            <option value="10">10× three.min.js (5.56 MB)</option>
+            <option value="1">1× three.min.js (543 KB)</option>
+          </select>
+          <button id="bench-start-btn" class="bench-btn">▶ Start Benchmark</button>
+        </div>
+      </div>
+      <div class="bench-card">
+        <div class="bench-axis-header">
+          <div class="bench-col-hdr label-hdr">Engine</div>
+          <div class="bench-col-hdr size-hdr">Real Bundle Size</div>
+          <div class="bench-col-hdr bar-hdr">Relative Time</div>
+          <div class="bench-col-hdr time-hdr">Time</div>
+        </div>
+        <div id="bench-rows" class="bench-rows">
+          <!-- Populated dynamically by bench-live.js -->
+        </div>
+      </div>
+      <div class="bench-footer">
+        <p id="bench-status">Loading bundle sizes...</p>
+        <span class="bench-env-note">Live in-browser execution. Bundle sizes verified on the fly via HTTP stream.</span>
+      </div>
+    </section>
+
+    <footer>
+      <p id="editor-help">Edit to run. Tab moves between controls; the output panel is keyboard-scrollable. Input is limited to 256 KiB.</p>
+      <p><strong>Neural syntax highlighting engine.</strong> Powered by WebGPU with an automatic WebAssembly CPU fallback.</p>
+    </footer>
+  </main>
+</body>
+</html>

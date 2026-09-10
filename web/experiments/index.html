@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tint matched quality benchmark</title>
+<style>
+  :root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
+  body { max-width: 60rem; margin: 3rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.6rem; } button, a { font: inherit; } button { padding: .5rem 1rem; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
+  #download { margin-left: 1rem; } code { overflow-wrap: anywhere; }
+</style>
+<h1>Old Tint / candidate Tint</h1>
+<p>The same deployed runtime, separate workers, frozen q4 weights. Four workloads, three warmups and nine measured calls per model. Keep this tab active and avoid other GPU work.</p>
+<p>Hardware metadata is self-reported, power mode is uncontrolled, and hashes are not authentication. This page never promotes a model or changes the default demo.</p>
+<p>Manifest <code id="manifest"></code></p>
+<button id="run" type="button">Run matched benchmark</button><a id="download" hidden>Download report and samples</a>
+<pre id="results" aria-live="polite">Not run.</pre>
+<script type="module">
+  import { runQualityBenchmark } from './runner.mjs';
+  const manifest = new URL(location.href).searchParams.get('manifest') || '/experiments/generated/quality-v1/manifest.json';
+  document.querySelector('#manifest').textContent = manifest;
+  const button = document.querySelector('#run'), results = document.querySelector('#results'), link = document.querySelector('#download');
+  let downloadURL;
+  button.onclick = async () => {
+    button.disabled = true; link.hidden = true; results.textContent = 'Running. Large-source calls may take several minutes.';
+    try {
+      window.promise = runQualityBenchmark({ manifest, iterations: 9, warmups: 3 });
+      const wrapper = await window.promise;
+      results.textContent = JSON.stringify(wrapper.report, null, 2);
+      if (downloadURL) URL.revokeObjectURL(downloadURL);
+      downloadURL = URL.createObjectURL(new Blob([JSON.stringify(wrapper, null, 2) + '\n'], { type: 'application/json' }));
+      link.href = downloadURL; link.download = 'quality-benchmark.json'; link.hidden = false;
+    } catch (error) { results.textContent = String(error.stack || error); }
+    finally { button.disabled = false; }
+  };
+</script>
+</html>

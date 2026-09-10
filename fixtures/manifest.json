@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "files": [
+    { "path": "train-a/totals.rs", "language": "rust", "group": "examples-train-a", "split": "train" },
+    { "path": "train-a/tags.ts", "language": "typescript", "group": "examples-train-a", "split": "train" },
+    { "path": "train-a/readings.ts", "language": "typescript", "group": "examples-train-a", "split": "train" },
+    { "path": "train-b/window.rs", "language": "rust", "group": "examples-train-b", "split": "train" },
+    { "path": "train-b/queue.ts", "language": "typescript", "group": "examples-train-b", "split": "train" },
+    { "path": "train-b/inventory.ts", "language": "typescript", "group": "examples-train-b", "split": "train" },
+    { "path": "validation/routes.rs", "language": "rust", "group": "examples-validation", "split": "validation" },
+    { "path": "validation/palette.ts", "language": "typescript", "group": "examples-validation", "split": "validation" },
+    { "path": "validation/tickets.ts", "language": "typescript", "group": "examples-validation", "split": "validation" },
+    { "path": "test/pulses.rs", "language": "rust", "group": "examples-test", "split": "test" },
+    { "path": "test/ledger.ts", "language": "typescript", "group": "examples-test", "split": "test" },
+    { "path": "test/words.ts", "language": "typescript", "group": "examples-test", "split": "test" }
+  ]
+}

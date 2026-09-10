@@ -1,0 +1,28 @@
+{
+  "lock": false,
+  "permissions": {
+    "compare": {
+      "read": [
+        "./.cache/corpus-v2/teacher/test.jsonl",
+        "./node_modules/gpu-lexer/dist/",
+        "./tools/compare-quality.ts",
+        "./tools/compare-metrics.ts",
+        "./deno.json"
+      ],
+      "write": [
+        "./artifacts/compare-tint-vs-gpulexer.json",
+        "./artifacts/compare-permissions.jsonl"
+      ]
+    },
+    "deno-test": {
+      "read": [
+        "./tools/compare-metrics.ts",
+        "./tools/compare-quality_test.ts"
+      ]
+    }
+  },
+  "tasks": {
+    "compare:quality": "DENO_AUDIT_PERMISSIONS=artifacts/compare-permissions.jsonl deno run -P=compare tools/compare-quality.ts .cache/corpus-v2/teacher/test.jsonl artifacts/compare-tint-vs-gpulexer.json",
+    "test:deno": "deno test --no-check tools/compare-quality_test.ts"
+  }
+}

@@ -1,0 +1,24 @@
+[package]
+name = "tint-model"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+wgpu = ["burn/wgpu"]
+
+[dependencies]
+burn.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+sha2 = "0.10"
+tint-core.workspace = true
+
+[dev-dependencies]
+burn = { workspace = true, features = ["ndarray", "autodiff"] }
+pollster = "0.4"
+
+[lints]
+workspace = true

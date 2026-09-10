@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "policy": {
+    "version": 2,
+    "fileBytes": 262144,
+    "sourceBytes": 67108864,
+    "metadataBytes": 16777216,
+    "maxFiles": 2000,
+    "maxLanguages": 120,
+    "candidatesPerRepositoryLanguage": 6,
+    "languageTokens": {"train":6000,"validation":3000,"test":3000},
+    "splitTokens": {"train":400000,"validation":100000,"test":360000},
+    "minimumTokens": 40,
+    "fallbackTokens": 10,
+    "preferredTokens": 400,
+    "preferredBytes": 1600,
+    "nearMinimumLines": 20,
+    "shingleLines": 3,
+    "nearJaccard": 0.8
+  },
+  "repositories": [
+    {"repository":"github-linguist/linguist","commit":"8ce379cac0732e3ed4ff4072535348cd2e7cf2b1","split":"test","prefix":"samples/","license":"LICENSE"},
+    {"repository":"highlightjs/highlight.js","commit":"fc3f06392f189354eed922973635ab9e9268b983","split":"validation","prefix":"test/detect/","license":"LICENSE"},
+    {"repository":"pygments/pygments","commit":"38f426a6b1cd4ffc6429f5808031b7c62ea57b1f","split":"train","prefix":"tests/examplefiles/","license":"LICENSE"},
+    {"repository":"rouge-ruby/rouge","commit":"16e6ecdb3bc4248cead78375e1b24580ee2352a1","split":"validation","prefix":"spec/visual/samples/","license":"LICENSE","layout":"filename"},
+    {"repository":"PrismJS/prism","commit":"36ad7f8bbb807d02b6b6c2837fe2a312fc473be6","split":"train","prefix":"tests/languages/","license":"LICENSE","format":"prism-test"}
+  ],
+  "aliases": {
+    "autohotkey":"ahk", "batchfile":"bat", "dos":"bat", "coq":"coq",
+    "emacslisp":"emacs-lisp", "fortran":"fortran-free-form", "fortranfixed":"fortran-fixed-form",
+    "fsharp":"fsharp", "csharp":"csharp", "c++":"cpp", "cs":"csharp",
+    "html+erb":"erb", "rhtml":"erb", "haml":"haml", "gettext catalog":"po",
+    "gettext":"po", "po":"po", "ini":"ini", "lisp":"common-lisp",
+    "make":"make", "mathematica":"wolfram", "objectivec":"objective-c",
+    "objc":"objective-c", "ocaml":"ocaml", "pas":"pascal", "delphi":"pascal",
+    "perl6":"raku", "protobuf":"proto", "protocol buffer":"proto", "python3":"python",
+    "rb":"ruby", "restructuredtext":"rst", "smalltalk":"smalltalk",
+    "systemverilog":"system-verilog", "textile":null, "vbnet":"vb", "visual basic .net":"vb",
+    "webassembly":"wasm", "wast":"wasm", "as":"actionscript-3", "as3":"actionscript-3",
+    "sh":"shellscript", "bash":"shellscript", "shell":"shellscript", "console":"shellsession",
+    "rocq prover":"coq", "wolfram language":"wolfram", "cr":"crystal", "hx":"haxe",
+    "hylang":"hy", "nixos":"nix", "splus":"r", "vb.net":"vb", "wat":"wasm",
+    "cucumber":"gherkin", "html+handlebars":"handlebars", "nasm":"asm", "x86asm":"asm",
+    "1c enterprise":"bsl", "freedesktop":"desktop", "django":null, "postgresql":"sql", "pgsql":"sql"
+  }
+}
