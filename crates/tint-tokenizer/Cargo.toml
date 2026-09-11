@@ -11,7 +11,14 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 tint-core.workspace = true
-wasm-bindgen = "=0.2.128"
+
+[dependencies.wasm-bindgen]
+version = "=0.2.128"
+optional = true
+
+[features]
+default = []
+compat = ["dep:wasm-bindgen"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 talc = "=5.1.0"

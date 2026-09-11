@@ -2,17 +2,17 @@
 
 Fast, compact syntax highlighter powered by WebGPU with an automatic CPU fallback.
 
-Everything needed to tokenize and highlight code runs locally. The bundle embeds a 10 KiB WebAssembly tokenizer and a 4-bit quantized neural model (12,871 parameters). There are zero network requests, zero peer dependencies, and zero runtime setup requirements.
+Everything needed to tokenize and highlight code runs locally. The bundle embeds a 21 KiB WebAssembly tokenizer and a 4-bit quantized neural model (12,871 parameters). There are zero network requests, zero peer dependencies, and zero runtime setup requirements.
 
 ## Numbers
 
-Measured on Bun browser ESM minification and Deno 2.9.6 WebGPU benchmark against `gpu-lexer@0.0.1`:
+Measured from the repo files with Node gzip and Brotli-11 (`dist/index.js` against `web/vendor/gpu-lexer.js`):
 
 | Metric | gpu-lexer | tint-lexer | Difference |
 | :--- | :--- | :--- | :--- |
-| Minified size | 60.8 KiB | 37.9 KiB | 37.7% smaller |
-| Gzip size | 33.5 KiB | 21.0 KiB | 37.3% smaller |
-| Brotli size | 28.5 KiB | 18.6 KiB | 34.8% smaller |
+| Minified size | 58.0 KiB | 55.5 KiB | 4.4% smaller |
+| Gzip size | 32.3 KiB | 24.3 KiB | 24.8% smaller |
+| Brotli size | 27.4 KiB | 21.4 KiB | 21.9% smaller |
 | 1 KiB latency | 17.5 ms | 12.9 ms | 1.35x faster |
 | 10 KiB latency | 32.2 ms | 15.6 ms | 2.06x faster |
 | 64 KiB latency | 108.0 ms | 30.1 ms | 3.59x faster |
@@ -125,10 +125,10 @@ worker.dispose();
 
 ## How it works
 
-1. **Tokenization.** A Rust tokenizer compiled to a 10 KiB WebAssembly binary scans source text into structural tokens, computing six categorical feature IDs per token in a single linear pass.
+1. **Tokenization.** A Rust tokenizer compiled to a 21 KiB WebAssembly binary scans source text into structural tokens, computing six categorical feature IDs per token in a single linear pass. The module uses a zero-import numeric ABI, so the JavaScript glue stays small. The legacy wasm-bindgen ABI remains available behind the `tint-tokenizer/compat` cargo feature for the compact playground.
 2. **Inference.** A two-layer window MLP with state context inspects adjacent tokens (radius 4) to predict token categories. Weights are stored in signed 4-bit format with float32 scales per block of 64 weights.
 3. **WebGPU execution.** Compute shaders dispatch workgroups of 64 threads across embedding lookup, hidden activation with tanh, and argmax classification.
-4. **CPU fallback.** When WebGPU is absent (Node.js, Bun, server environments, or older browsers), the runtime runs pure JavaScript inference with buffer pooling, returning identical tokens.
+4. **CPU fallback.** When WebGPU is absent (Node.js, Bun, server environments, or older browsers), the runtime runs the same inference in WebAssembly with SIMD, returning identical tokens.
 
 ## Development
 
@@ -139,11 +139,29 @@ cargo test --workspace
 npm test
 ```
 
-Build the standalone bundle:
+Build the standalone bundle (recompiles the WASM tokenizer, re-embeds it, minifies with esbuild, refreshes `dist/` and `web/tint.js`):
 
 ```sh
-cargo build -p tint-tokenizer --target wasm32-unknown-unknown --profile web
-node tools/build-compact.mjs --model artifacts/compact-q4
+npm run build
+```
+
+Check the shipped sizes:
+
+```sh
+npm run size
+```
+
+Rebuild the legacy wasm-bindgen package for the compact playground (`web/compact/pkg`, gitignored):
+
+```sh
+cargo build -p tint-tokenizer --target wasm32-unknown-unknown --profile web --features tint-tokenizer/compat
+wasm-bindgen --target web --out-dir web/compact/pkg target/wasm32-unknown-unknown/web/tint_tokenizer.wasm
+```
+
+Rebuild the Shiki vendor bundle used by the live demo benchmark (see the command in `tools/vendor-shiki-entry.js`):
+
+```sh
+npx esbuild tools/vendor-shiki-entry.js --bundle --minify --format=esm --outfile=web/vendor/shiki.js
 ```
 
 ## License

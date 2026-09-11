@@ -522,70 +522,202 @@ struct State {
     weights: Vec<f32>,
 }
 
-#[allow(dead_code)]
-static STATE: std::sync::Mutex<State> = std::sync::Mutex::new(State {
-    tokens: Vec::new(),
-    labels: Vec::new(),
-    weights: Vec::new(),
-});
+#[cfg(target_arch = "wasm32")]
+struct StateCell {
+    inner: core::cell::UnsafeCell<State>,
+}
+
+// SAFETY: wasm32 without atomics is single-threaded, and the entry points
+// below never re-enter the state (the raw ABI makes no JS calls at all).
+#[cfg(target_arch = "wasm32")]
+unsafe impl Sync for StateCell {}
 
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn set_weights(w: &[f32]) {
-    if let Ok(mut state) = STATE.lock() {
-        state.weights.clear();
-        state.weights.extend_from_slice(w);
+static STATE: StateCell = StateCell {
+    inner: core::cell::UnsafeCell::new(State {
+        tokens: Vec::new(),
+        labels: Vec::new(),
+        weights: Vec::new(),
+    }),
+};
+
+#[cfg(target_arch = "wasm32")]
+fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> R {
+    // SAFETY: see the Sync impl above.
+    unsafe { f(&mut *STATE.inner.get()) }
+}
+
+// Raw numeric ABI consumed by the npm bundle. The module has zero imports:
+// errors are negative codes so the JS glue needs no JsValue machinery.
+#[cfg(target_arch = "wasm32")]
+const ERR_TOO_BIG: i32 = -1;
+#[cfg(target_arch = "wasm32")]
+const ERR_TOO_MANY_TOKENS: i32 = -2;
+#[cfg(target_arch = "wasm32")]
+const ERR_INVALID_UTF8: i32 = -3;
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+/// # Safety
+/// `size`/`align` must describe a layout the caller owns via a previous
+/// `tint_malloc`/`tint_realloc` result when calling `tint_free`/`tint_realloc`.
+pub unsafe extern "C" fn tint_malloc(size: usize, align: usize) -> *mut u8 {
+    let Ok(layout) = core::alloc::Layout::from_size_align(size, align) else {
+        return core::ptr::null_mut();
+    };
+    // SAFETY: layout is valid; ownership moves to the caller.
+    unsafe { std::alloc::alloc(layout) }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+/// # Safety
+/// Same contract as `tint_malloc`; `ptr`/`old_size`/`align` must match a live
+/// allocation from `tint_malloc`/`tint_realloc`.
+pub unsafe extern "C" fn tint_realloc(
+    ptr: *mut u8,
+    old_size: usize,
+    align: usize,
+    new_size: usize,
+) -> *mut u8 {
+    let (Ok(old), Ok(new)) = (
+        core::alloc::Layout::from_size_align(old_size, align),
+        core::alloc::Layout::from_size_align(new_size, align),
+    ) else {
+        return core::ptr::null_mut();
+    };
+    // SAFETY: ptr is a live allocation with the `old` layout.
+    unsafe { std::alloc::realloc(ptr, old, new.size()) }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+/// # Safety
+/// Same contract as `tint_malloc`.
+pub unsafe extern "C" fn tint_free(ptr: *mut u8, size: usize, align: usize) {
+    if ptr.is_null() {
+        return;
+    }
+    if let Ok(layout) = core::alloc::Layout::from_size_align(size, align) {
+        // SAFETY: ptr is a live allocation with this layout.
+        unsafe { std::alloc::dealloc(ptr, layout) }
     }
 }
 
 #[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+/// # Safety
+/// `ptr` must point to `len` readable `f32` values.
+pub unsafe extern "C" fn tint_set_weights(ptr: *const f32, len: usize) {
+    // SAFETY: guaranteed by the caller (JS glue writes the buffer first).
+    let src = unsafe { core::slice::from_raw_parts(ptr, len) };
+    with_state(|state| {
+        state.weights.clear();
+        state.weights.extend_from_slice(src);
+    });
+}
+
+#[cfg(target_arch = "wasm32")]
+fn utf8_source(src_ptr: *const u8, src_len: usize) -> Result<&'static str, i32> {
+    if src_len > MAX_SOURCE_BYTES {
+        return Err(ERR_TOO_BIG);
+    }
+    // SAFETY: the byte range is readable; validity is checked below.
+    let bytes = unsafe { core::slice::from_raw_parts(src_ptr, src_len) };
+    core::str::from_utf8(bytes).map_err(|_| ERR_INVALID_UTF8)
+}
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+/// # Safety
+/// `src_ptr` must point to `src_len` readable bytes. Returns the token count,
+/// or a negative `ERR_*` code.
+pub unsafe extern "C" fn tint_tokenize(src_ptr: *const u8, src_len: usize) -> i32 {
+    let src = match utf8_source(src_ptr, src_len) {
+        Ok(src) => src,
+        Err(code) => return code,
+    };
+    with_state(|state| match pack_into(src, &mut state.tokens) {
+        Ok(()) => (state.tokens.len() / 4) as i32,
+        // The byte cap is pre-checked above, so only the token cap can fail.
+        Err(_) => ERR_TOO_MANY_TOKENS,
+    })
+}
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+/// # Safety
+/// Same contract as `tint_tokenize`.
+pub unsafe extern "C" fn tint_tokenize_and_infer(src_ptr: *const u8, src_len: usize) -> i32 {
+    let src = match utf8_source(src_ptr, src_len) {
+        Ok(src) => src,
+        Err(code) => return code,
+    };
+    with_state(|state| {
+        if pack_into(src, &mut state.tokens).is_err() {
+            return ERR_TOO_MANY_TOKENS;
+        }
+        let count = state.tokens.len() / 4;
+        infer_cpu_into(&state.tokens, &state.weights, &mut state.labels);
+        count as i32
+    })
+}
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+pub fn tint_get_tokens_ptr() -> *const u32 {
+    with_state(|state| state.tokens.as_ptr())
+}
+
+#[cfg(target_arch = "wasm32")]
+#[unsafe(no_mangle)]
+pub fn tint_get_labels_ptr() -> *const u8 {
+    with_state(|state| state.labels.as_ptr())
+}
+
+// Legacy wasm-bindgen ABI for the gitignored compact playground
+// (`web/compact/pkg`, rebuilt with `--features compat`). Untouched behavior.
+#[cfg(all(target_arch = "wasm32", feature = "compat"))]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn set_weights(w: &[f32]) {
+    with_state(|state| {
+        state.weights.clear();
+        state.weights.extend_from_slice(w);
+    });
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "compat"))]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn tokenize_and_infer(source: &str) -> Result<usize, wasm_bindgen::JsValue> {
-    if let Ok(mut state) = STATE.lock() {
+    with_state(|state| {
         let State {
             tokens,
             labels,
             weights,
-        } = &mut *state;
+        } = state;
         pack_into(source, tokens).map_err(wasm_bindgen::JsValue::from_str)?;
         let count = tokens.len() / 4;
         infer_cpu_into(tokens, weights, labels);
         Ok(count)
-    } else {
-        Err(wasm_bindgen::JsValue::from_str("Lock poisoned"))
-    }
+    })
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "compat"))]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn get_tokens_ptr() -> *const u32 {
-    if let Ok(state) = STATE.lock() {
-        state.tokens.as_ptr()
-    } else {
-        core::ptr::null()
-    }
+    with_state(|state| state.tokens.as_ptr())
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "compat"))]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn get_labels_ptr() -> *const u8 {
-    if let Ok(state) = STATE.lock() {
-        state.labels.as_ptr()
-    } else {
-        core::ptr::null()
-    }
+    with_state(|state| state.labels.as_ptr())
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "compat"))]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn tokenize(source: &str) -> Result<Vec<u32>, wasm_bindgen::JsValue> {
     pack(source).map_err(wasm_bindgen::JsValue::from_str)
-}
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn infer(tokens: &[u32], weights: &[f32]) -> Vec<u8> {
-    infer_cpu(tokens, weights)
 }
 
 #[cfg(test)]

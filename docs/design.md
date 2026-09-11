@@ -115,6 +115,11 @@ The tokenizer streams core tokens into four u32 values per token. The first is
 the UTF-16 end offset; the remaining three pack pairs of 11-bit feature IDs.
 It does not retain a second vector of token structs. Talc manages allocations
 for the single-threaded WASM target, and Binaryen optimizes the generated module.
+The shipped module exports a zero-import numeric ABI: `tint_tokenize`,
+`tint_tokenize_and_infer`, token and label pointer getters, and a minimal
+malloc family. Errors are negative codes, so the JavaScript glue needs no
+string marshaling. The wasm-bindgen exports exist only with the `compat`
+cargo feature, for the compact playground.
 
 Inference uploads the packed array once. Three kernels compute feature means,
 hidden activations, and output classes. Whitespace skips hidden-layer work because

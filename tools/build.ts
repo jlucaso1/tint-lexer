@@ -25,7 +25,7 @@ export async function buildWasm(): Promise<{ wasmBase64: string; rawBytes: numbe
   const isNightlyAvailable = spawnSync("cargo", ["+nightly", "--version"]).status === 0;
 
   if (isNightlyAvailable) {
-    console.log("Using nightly toolchain for ultra-compact wasm (~10 KiB)...");
+    console.log("Using nightly toolchain for a compact wasm build...");
     run(
       "cargo",
       [
@@ -35,6 +35,7 @@ export async function buildWasm(): Promise<{ wasmBase64: string; rawBytes: numbe
         "tint-tokenizer",
         "--target",
         "wasm32-unknown-unknown",
+        "--no-default-features",
         "-Z",
         "build-std=std,panic_abort",
         "--profile",
@@ -54,6 +55,7 @@ export async function buildWasm(): Promise<{ wasmBase64: string; rawBytes: numbe
       "tint-tokenizer",
       "--target",
       "wasm32-unknown-unknown",
+      "--no-default-features",
       "--profile",
       "web",
       "--jobs",
@@ -65,19 +67,24 @@ export async function buildWasm(): Promise<{ wasmBase64: string; rawBytes: numbe
 
   const staging = await mkdtemp(join(root, ".wasm-staging-"));
   try {
-    console.log("Running wasm-bindgen and wasm-opt...");
-    run("wasm-bindgen", [
-      "--target",
-      "web",
-      "--out-dir",
-      staging,
+    // Raw numeric ABI: zero imports, so wasm-bindgen is skipped entirely.
+    // Optimize the module directly.
+    console.log("Running wasm-opt...");
+    const wasmPath = join(staging, "tint_tokenizer_opt.wasm");
+    run("wasm-opt", [
       "target/wasm32-unknown-unknown/web/tint_tokenizer.wasm",
+      "-Oz",
+      "--all-features",
+      "--strip-producers",
+      "-o",
+      wasmPath,
     ]);
 
-    const wasmPath = join(staging, "tint_tokenizer_bg.wasm");
-    run("wasm-opt", [wasmPath, "-Oz", "--all-features", "--strip-producers", "-o", wasmPath]);
-
     const bytes = await readFile(wasmPath);
+    const imports = WebAssembly.Module.imports(new WebAssembly.Module(bytes));
+    if (imports.length !== 0) {
+      throw new Error(`Raw tokenizer ABI must have zero imports, found: ${JSON.stringify(imports)}`);
+    }
     const wasmBase64 = bytes.toString("base64");
     const brotliBytes = brotliCompressSync(bytes, {
       params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
@@ -106,7 +113,7 @@ async function main(): Promise<void> {
   );
   await writeFile(srcIndexPath, srcCode, "utf8");
 
-  run("npx", ["esbuild", srcIndexPath, "--outfile=" + distIndexPath, "--format=esm"]);
+  run("npx", ["esbuild", srcIndexPath, "--outfile=" + distIndexPath, "--format=esm", "--minify"]);
   const compiledJs = await readFile(distIndexPath, "utf8");
   await writeFile(webTintPath, compiledJs, "utf8");
 

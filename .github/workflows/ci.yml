@@ -36,6 +36,9 @@ jobs:
       - name: Verify WebAssembly target compilation
         run: cargo check -p tint-web -p tint-tokenizer --target wasm32-unknown-unknown --locked
 
+      - name: Verify WebAssembly compat ABI compilation
+        run: cargo check -p tint-tokenizer --target wasm32-unknown-unknown --features tint-tokenizer/compat --locked
+
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

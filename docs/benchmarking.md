@@ -32,6 +32,25 @@ window.benchmarkPromise.then(report => { window.benchmarkReport = report; });
 
 Start this promise without awaiting it in browser automation calls with short command timeouts. Poll `window.benchmarkReport` later. Attach a rejection handler in automation to capture preparation or page-level errors. Calls cannot overlap within one page.
 
+## Live demo benchmark
+
+The demo page (`web/index.html`) runs a separate in-browser benchmark from
+`web/bench-live.js`. It highlights the `three.min.js` fixture once or ten
+times per engine, after a warmup slice, and ranks engines by wall time. The
+engines are tint-lexer on WebGPU, gpu-lexer on WebGPU, tint-lexer on CPU
+(WASM SIMD), Sugar High, Highlight.js, Prism.js, and Shiki. The Shiki entry
+uses the JavaScript regex engine with the JavaScript grammar and the
+github-dark theme, so the page fetches no oniguruma WASM. Its vendor bundle
+is built from `tools/vendor-shiki-entry.js`:
+
+```sh
+npx esbuild tools/vendor-shiki-entry.js --bundle --minify --format=esm --outfile=web/vendor/shiki.js
+```
+
+Bundle sizes on that page are measured live. The runner fetches each bundle
+URL and reports raw bytes plus gzip bytes via CompressionStream, so the
+numbers reflect the files actually served.
+
 ## Sources and artifacts
 
 Default timing cases repeat deterministic ASCII Rust, TypeScript and Python examples to exactly 1 KiB, 64 KiB and 256 KiB, producing nine cases. Truncation can leave incomplete syntax. These are synthetic timing inputs, not quality data. Each case records its UTF-8 bytes, UTF-16 code units and SHA-256. Workers verify those values before timing.
@@ -77,10 +96,10 @@ Enable `includeBurn: true` or the page checkbox only when `/pkg/tint_web.js`, it
 ## Size accounting
 
 ```sh
-node tools/measure-size.mjs
+npm run size
 ```
 
-The script writes JSON to stdout. Preparation calls the same functions and publishes `generated/size.json` for browser reports. Reprepare after deployment artifacts change. Missing files produce explicit unavailable totals rather than silently undercounting.
+The script prints a per-file table with raw, minified, gzip, and Brotli-11 sizes for the shipped `dist/` files. Preparation calls the same functions and publishes `generated/size.json` for browser reports. Reprepare after deployment artifacts change. Missing files produce explicit unavailable totals rather than silently undercounting.
 
 Compact library totals include the deployed minified runtime, tokenizer JS/WASM, q4 metadata and weights. Burn totals include its JS/WASM and float metadata/weights. The original published total reads the exact npm `dist/index.js`, which is 59,570 raw bytes in the published 0.0.1 package. A separate total measures the esbuild browser bundle so bootstrap and minifier changes do not get confused with published bytes. SHA-256 values accompany each measured file.
 

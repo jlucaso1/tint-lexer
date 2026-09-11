@@ -89,6 +89,19 @@ const ENGINES = [
       }
       return state.prismJs.highlight(code);
     }
+  },
+  {
+    id: "shiki",
+    name: "Shiki",
+    badge: "JS regex",
+    bundleUrl: "./vendor/shiki.js",
+    type: "cpu",
+    async run(code, state) {
+      if (!state.shiki) {
+        state.shiki = await import("./vendor/shiki.js");
+      }
+      return state.shiki.highlight(code);
+    }
   }
 ];
 
